@@ -40,7 +40,7 @@ def identify_log_message(event, context):
         for webhook in enforced_webhooks:
             print('Deleted static credentials on Webhook: ' + str(webhook.name))
     else:
-        print('No logs matched')
+        print('No logs matched. Nothing changed')
 
 
 def enforce_agent_logging(name, policy):
