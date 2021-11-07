@@ -26,7 +26,7 @@ def identify_log_message(event, context):
     if log_method == "google.cloud.dialogflow.v3alpha1.Webhooks.UpdateWebhook":
         webhook_name = pubsub_json['protoPayload']['resourceName']
         delete_webhook_credentials(webhook_name)
-        print('Deleted static credentials on Webhook: ' + str(webhook_name))
+        print('Deleted static credentials on Webhook: ' + str(webhook_name) + 'check with end user')
 
     # Execute Agent logging function to set correct log policy
     elif log_method == "google.cloud.dialogflow.v3alpha1.Agents.UpdateAgent":
