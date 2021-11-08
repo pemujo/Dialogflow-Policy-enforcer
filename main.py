@@ -28,17 +28,27 @@ def identify_log_message(event, context):
         delete_webhook_credentials(webhook_name)
         print('Deleted static credentials on Webhook: ' + str(webhook_name) + 'inform end user')
 
-    # Execute Agent logging function to set correct log policy
-    elif log_method == "google.cloud.dialogflow.v3alpha1.Agents.UpdateAgent":
-        agent_id = pubsub_json['protoPayload']['resourceName']
-        enforced_agent = enforce_agent_logging(agent_id, log_policy)
-        print('Updated Dialogflow log policy to ' + str(log_policy) + ' on Dialogflow agent: ' + enforced_agent.name)
-
     elif log_method == "google.cloud.dialogflow.v3alpha1.Webhooks.CreateWebhook":
         agent_id = pubsub_json['protoPayload']['resourceName']
         enforced_webhooks = webhook_cred_enforcer(agent_id)
         for webhook in enforced_webhooks:
             print('Deleted static credentials on Webhook: ' + str(webhook.name))
+
+    # Execute Agent logging function to set correct log policy
+    elif log_method == "google.cloud.dialogflow.v3alpha1.Agents.CreateAgent":
+
+        parent = pubsub_json['protoPayload']['request']['parent']
+        agents = list_agents(parent)
+        enforced_agents = [enforce_agent_logging(agent.name, log_policy) for agent in agents]
+        print('Updated Dialogflow log policy to ' + str(log_policy) + ' on Dialogflow agent: ' + enforced_agents)
+
+
+    elif log_method == "google.cloud.dialogflow.v3alpha1.Agents.UpdateAgent":
+        agent_id = pubsub_json['protoPayload']['resourceName']
+        enforced_agent = enforce_agent_logging(agent_id, log_policy)
+        print('Updated Dialogflow log policy to ' + str(log_policy) + ' on Dialogflow agent: ' + enforced_agent.name)
+
+
     else:
         print(log_method)
         print('No logs matched. Nothing changed')
@@ -120,12 +130,13 @@ def webhook_cred_enforcer(agent_id):
     return modified_webhooks
 
 
-def list_agents(project_id):
+def list_agents(parent):
     """ Returns a ListAgentsPager object with the CX agents created on the project_id
     Args:
         project_id (str): Google Cloud Project ID
     """
-    parent = 'projects/' + project_id + '/locations/global'
+    # Creates Dialogflow API Client
     agents_client = AgentsClient()
+
     agents_list = agents_client.list_agents(parent=parent)
     return agents_list
