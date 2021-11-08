@@ -41,8 +41,9 @@ def identify_log_message(event, context):
         parent = pubsub_json['protoPayload']['request']['parent']
         agents = list_agents(parent, region)
         enforced_agents = [enforce_agent_logging(agent.name, log_policy, region) for agent in agents]
-        print('Updated Dialogflow log policy to ' + str(log_policy) + ' on Dialogflow agents')
-
+        print('Updated Dialogflow log policy to ' + str(log_policy) + ' on Dialogflow agents:')
+        for agent in enforced_agents:
+            print('Agent: ' + agent)
 
     elif log_method == "google.cloud.dialogflow.v3alpha1.Agents.UpdateAgent":
         agent_id = pubsub_json['protoPayload']['resourceName']
@@ -57,6 +58,12 @@ def identify_log_message(event, context):
 
 
 def get_client_option(region):
+    """
+    Dialogflow CX requires regional API endpoint based on the agent's region
+    as per https://cloud.google.com/dialogflow/cx/docs/reference/rest/v3-overview#service-endpoint
+    :param region: Agent's region
+    :return: client_options object
+    """
     # Regional options needed for CX
     if region == 'global':
         region = ''
@@ -67,11 +74,12 @@ def get_client_option(region):
 
 
 def enforce_agent_logging(name, policy, region):
-    """ Returns an agent object with modified logging settings
-    Args:
-        name (str): Dialogflow Agent ID
-        policy (bool): Dialogflow Logging policy required
-        region (str): Dialogflow Agent's region
+    """
+    Used to enforce the logging policy on the agent.
+    :param name: Dialogflow Agent ID (str)
+    :param policy: Dialogflow Logging policy required (bool)
+    :param region: Dialogflow Agent's region (str)
+    :return: agent object with modified logging settings
     """
 
     # Regional options needed for CX
@@ -131,8 +139,8 @@ def log_policy_check(agents_list):
 
 def log_policy_enforcer(agents_list):
     failed_policy_agents = log_policy_check(agents_list)
-    enabled_logging = [enforce_agent_logging(agent.name, log_policy) for agent in failed_policy_agents]
-    return enabled_logging
+    enforced_logging_agents = [enforce_agent_logging(agent.name, log_policy) for agent in failed_policy_agents]
+    return enforced_logging_agents
 
 
 def webhook_cred_enforcer(agent_id):
