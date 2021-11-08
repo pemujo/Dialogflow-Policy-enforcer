@@ -5,6 +5,7 @@ from google.cloud.dialogflowcx_v3.types.agent import UpdateAgentRequest
 from google.cloud.dialogflowcx_v3.services.webhooks import WebhooksClient
 from google.cloud.dialogflowcx_v3.types import UpdateWebhookRequest
 from google.cloud.dialogflowcx_v3.types import AdvancedSettings
+from google.api_core.client_options import ClientOptions
 from google.protobuf import field_mask_pb2
 
 # Placeholder for Dialogflow logging policy requirement.
@@ -45,7 +46,8 @@ def identify_log_message(event, context):
 
     elif log_method == "google.cloud.dialogflow.v3alpha1.Agents.UpdateAgent":
         agent_id = pubsub_json['protoPayload']['resourceName']
-        enforced_agent = enforce_agent_logging(agent_id, log_policy)
+        region = pubsub_json['protoPayload']['resourceLocation']['currentLocations'][0]
+        enforced_agent = enforce_agent_logging(agent_id, log_policy, region)
         print('Updated Dialogflow log policy to ' + str(log_policy) + ' on Dialogflow agent: ' + enforced_agent.name)
 
 
@@ -54,14 +56,23 @@ def identify_log_message(event, context):
         print('No logs matched. Nothing changed')
 
 
-def enforce_agent_logging(name, policy):
+def enforce_agent_logging(name, policy, region):
     """ Returns an agent object with modified logging settings
     Args:
         name (str): Dialogflow Agent ID
         policy (bool): Dialogflow Logging policy required
+        region (str): Dialogflow Agent's region
     """
+
+    # Regional options needed for CX
+    if region == 'global':
+        region = ''
+    else:
+        region = region + '-'
+    client_options = ClientOptions(api_endpoint=region + 'dialogflow.googleapis.com')
+
     # Creates Dialogflow API Client
-    agents_client = AgentsClient()
+    agents_client = AgentsClient(client_options=client_options)
 
     # Gets Dialogflow agent object
     agent = agents_client.get_agent(name=name)
