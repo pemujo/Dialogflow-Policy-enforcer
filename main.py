@@ -39,8 +39,9 @@ def identify_log_message(event, context):
 
         parent = pubsub_json['protoPayload']['request']['parent']
         agents = list_agents(parent)
-        enforced_agents = [enforce_agent_logging(agent.name, log_policy).name for agent in agents]
-        print('Updated Dialogflow log policy to ' + str(log_policy) + ' on Dialogflow agent: ' + enforced_agents)
+        enforced_agents = [enforce_agent_logging(agent.name, log_policy) for agent in agents]
+        agent_names = [agent.name for agent in enforced_agents]
+        print('Updated Dialogflow log policy to ' + str(log_policy) + ' on Dialogflow agent: ' + agent_names)
 
 
     elif log_method == "google.cloud.dialogflow.v3alpha1.Agents.UpdateAgent":
