@@ -7,7 +7,7 @@ from google.cloud.dialogflowcx_v3.types import UpdateWebhookRequest
 from google.cloud.dialogflowcx_v3.types import AdvancedSettings
 from google.protobuf import field_mask_pb2
 
-# Placeholder for Dialogflow logging policy requirement
+# Placeholder for Dialogflow logging policy requirement.
 log_policy = True
 
 
@@ -40,6 +40,7 @@ def identify_log_message(event, context):
         for webhook in enforced_webhooks:
             print('Deleted static credentials on Webhook: ' + str(webhook.name))
     else:
+        print(log_method)
         print('No logs matched. Nothing changed')
 
 
