@@ -37,10 +37,10 @@ def identify_log_message(event, context):
 
     # Execute Agent logging function to set correct log policy
     elif log_method == "google.cloud.dialogflow.v3alpha1.Agents.CreateAgent":
-
+        region = pubsub_json['protoPayload']['resourceLocation']['currentLocations'][0]
         parent = pubsub_json['protoPayload']['request']['parent']
-        agents = list_agents(parent)
-        enforced_agents = [enforce_agent_logging(agent.name, log_policy) for agent in agents]
+        agents = list_agents(parent, region)
+        enforced_agents = [enforce_agent_logging(agent.name, log_policy, region) for agent in agents]
         print('Updated Dialogflow log policy to ' + str(log_policy) + ' on Dialogflow agents')
 
 
@@ -56,6 +56,16 @@ def identify_log_message(event, context):
         print('No logs matched. Nothing changed')
 
 
+def get_client_option(region):
+    # Regional options needed for CX
+    if region == 'global':
+        region = ''
+    else:
+        region = region + '-'
+    client_options = ClientOptions(api_endpoint=region + 'dialogflow.googleapis.com')
+    return client_options
+
+
 def enforce_agent_logging(name, policy, region):
     """ Returns an agent object with modified logging settings
     Args:
@@ -65,11 +75,7 @@ def enforce_agent_logging(name, policy, region):
     """
 
     # Regional options needed for CX
-    if region == 'global':
-        region = ''
-    else:
-        region = region + '-'
-    client_options = ClientOptions(api_endpoint=region + 'dialogflow.googleapis.com')
+    client_options = get_client_option(region)
 
     # Creates Dialogflow API Client
     agents_client = AgentsClient(client_options=client_options)
@@ -141,13 +147,18 @@ def webhook_cred_enforcer(agent_id):
     return modified_webhooks
 
 
-def list_agents(parent):
+def list_agents(parent, region):
     """ Returns a ListAgentsPager object with the CX agents created on the project_id
     Args:
-        project_id (str): Google Cloud Project ID
+        parent (str): Dialogflow agent location Format: projects/<Project ID>/locations/<Location ID>
+        region (str): Agent's Google Cloud region
     """
+
+    # Regional options needed for CX
+    client_options = get_client_option(region)
+
     # Creates Dialogflow API Client
-    agents_client = AgentsClient()
+    agents_client = AgentsClient(client_options=client_options)
 
     agents_list = agents_client.list_agents(parent=parent)
     return agents_list
