@@ -13,36 +13,39 @@ log_policy = True
 
 
 def identify_log_message(event, context):
-    """Triggered from a message on a Cloud Pub/Sub topic. Executes functions based on the log's 'Method'
-    Args:
-         event (dict): Event payload.
-         context (google.cloud.functions.Context): Metadata for the event.
     """
+    Triggered from a message on a Cloud Pub/Sub topic. Executes functions based on the log's 'Method'
+    :param event:  Event payload (dict)
+    :param context: Metadata for the event (google.cloud.functions.Context)
+    :return:
+    """
+
     # Decode Data from event and capture log method from ['data']['resource']['labels']['method']
     pubsub_message = base64.b64decode(event['data']).decode('utf-8')
     pubsub_json = json.loads(pubsub_message)
     log_method = pubsub_json['resource']['labels']['method']
     region = pubsub_json['protoPayload']['resourceLocation']['currentLocations'][0]
+    client_options = get_client_option(region)
 
     # Remove webhook credentials after an update
     if log_method == "google.cloud.dialogflow.v3alpha1.Webhooks.UpdateWebhook":
         webhook_name = pubsub_json['protoPayload']['resourceName']
-        delete_webhook_credentials(webhook_name, region)
+        delete_webhook_credentials(webhook_name, client_options)
         print('Deleted static credentials on Webhook: ' + str(webhook_name) + 'inform end user')
 
 
     # Remove webhook credentials after a Webhook is created
     elif log_method == "google.cloud.dialogflow.v3alpha1.Webhooks.CreateWebhook":
         agent_id = pubsub_json['protoPayload']['resourceName']
-        enforced_webhooks = webhook_cred_enforcer(agent_id, region)
+        enforced_webhooks = webhook_cred_enforcer(agent_id, client_options)
         for webhook in enforced_webhooks:
             print('Deleted static credentials on Webhook: ' + str(webhook.name))
 
     # Set correct log policy after agent is created
     elif log_method == "google.cloud.dialogflow.v3alpha1.Agents.CreateAgent":
         parent = pubsub_json['protoPayload']['request']['parent']
-        agents = list_agents(parent, region)
-        enforced_agents = [enforce_agent_logging(agent.name, log_policy, region) for agent in agents]
+        agents = list_agents(parent, client_options)
+        enforced_agents = [enforce_agent_logging(agent.name, log_policy, client_options) for agent in agents]
         print('Updated Dialogflow log policy to ' + str(log_policy) + ' on Dialogflow agents:')
         for agent in enforced_agents:
             print('Agent: ' + agent.name)
@@ -50,7 +53,7 @@ def identify_log_message(event, context):
     # Set correct log policy after agent is updated
     elif log_method == "google.cloud.dialogflow.v3alpha1.Agents.UpdateAgent":
         agent_id = pubsub_json['protoPayload']['resourceName']
-        enforced_agent = enforce_agent_logging(agent_id, log_policy, region)
+        enforced_agent = enforce_agent_logging(agent_id, log_policy, client_options)
         print('Updated Dialogflow log policy to ' + str(log_policy) + ' on Dialogflow agent: ' + enforced_agent.name)
 
     else:
@@ -74,17 +77,14 @@ def get_client_option(region):
     return client_options
 
 
-def enforce_agent_logging(name, policy, region):
+def enforce_agent_logging(name, policy, client_options):
     """
     Used to enforce the logging policy on the agent.
+    :param client_options:
     :param name: Dialogflow Agent ID (str)
     :param policy: Dialogflow Logging policy required (bool)
-    :param region: Dialogflow Agent's region (str)
     :return: agent object with modified logging settings
     """
-
-    # Regional options needed for CX
-    client_options = get_client_option(region)
 
     # Creates Dialogflow API Client
     agents_client = AgentsClient(client_options=client_options)
@@ -109,14 +109,12 @@ def enforce_agent_logging(name, policy, region):
     return response
 
 
-def delete_webhook_credentials(webhook_name, region):
+def delete_webhook_credentials(webhook_name, client_options):
     """ Returns a webhook object without credentials
     Args:
-        webhook_name (str): Dialogflow Webhook
-        :param region:
+        :param client_options:
+        :param webhook_name: Dialogflow Webhook name (str)
     """
-    # Regional options needed for CX
-    client_options = get_client_option(region)
 
     # Get Dialogflow Webhook API client
     webhook_client = WebhooksClient(client_options=client_options)
@@ -147,30 +145,25 @@ def log_policy_enforcer(agents_list):
     return enforced_logging_agents
 
 
-def webhook_cred_enforcer(agent_id, region):
+def webhook_cred_enforcer(agent_id, client_options):
     """ Removes static credentials from all webhooks of the agent_id
     Args:
          agent_id (str): Dialogflow agent id
 
     """
-    # Regional options needed for CX
-    client_options = get_client_option(region)
 
     webhook_client = WebhooksClient(client_options=client_options)
     webhooks = webhook_client.list_webhooks(parent=agent_id)
-    modified_webhooks = [delete_webhook_credentials(webhook.name, region) for webhook in webhooks]
+    modified_webhooks = [delete_webhook_credentials(webhook.name, client_options) for webhook in webhooks]
     return modified_webhooks
 
 
-def list_agents(parent, region):
+def list_agents(parent, client_options):
     """ Returns a ListAgentsPager object with the CX agents created on the project_id
     Args:
-        parent (str): Dialogflow agent location Format: projects/<Project ID>/locations/<Location ID>
-        region (str): Agent's Google Cloud region
+        :param parent: Dialogflow agent location Format: projects/<Project ID>/locations/<Location ID> (str)
+        :param client_options:
     """
-
-    # Regional options needed for CX
-    client_options = get_client_option(region)
 
     # Creates Dialogflow API Client
     agents_client = AgentsClient(client_options=client_options)
