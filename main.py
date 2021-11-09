@@ -37,7 +37,6 @@ def main_function(event, context):
         raise
 
 
-
 def execute_policy_enforcer(log_method, client_options, pubsub_json):
     """
     Executes functions based on the log's 'Method'
