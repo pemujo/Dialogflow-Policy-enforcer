@@ -12,7 +12,7 @@
 
 ### Configuration steps:
 
-1. Enable Audit logs enabled for Dialoglow API.
+1. Enable all Audit logs for Dialoglow API.
 
 
 2. Create org-level Cloud log router/log-sink sending to pub/sub topic.
