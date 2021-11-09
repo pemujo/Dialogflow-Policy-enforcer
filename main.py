@@ -28,7 +28,7 @@ def main_function(event, context):
     log_method = pubsub_json['resource']['labels']['method']
     region = pubsub_json['protoPayload']['resourceLocation']['currentLocations'][0]
     client_options = get_client_option(region)
-    execute_policy_enforcer(log_method, client_options)
+    execute_policy_enforcer(log_method, client_options, pubsub_json)
 
 
 def execute_policy_enforcer(log_method, client_options, pubsub_json):
