@@ -28,6 +28,8 @@ def main_function(event, context):
     log_method = pubsub_json['resource']['labels']['method']
     region = pubsub_json['protoPayload']['resourceLocation']['currentLocations'][0]
     client_options = get_client_option(region)
+
+    # Execute enforcing policies
     execute_policy_enforcer(log_method, client_options, pubsub_json)
 
 
@@ -85,11 +87,8 @@ def get_client_option(region):
     :return: client_options object
     """
     # Regional options needed for CX
-    if region == 'global':
-        region = ''
-    else:
-        region = region + '-'
-    client_options = ClientOptions(api_endpoint=region + 'dialogflow.googleapis.com')
+    endpoint_region = '' if region == 'global' else region = region + '-'
+    client_options = ClientOptions(api_endpoint=endpoint_region + 'dialogflow.googleapis.com')
     return client_options
 
 
