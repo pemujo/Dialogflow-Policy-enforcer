@@ -1,16 +1,19 @@
 # Dialogflow-Policy-enforcer
-Used to enforce Dialogflow CX configuration policies:
+#### Used to enforce Dialogflow CX configuration policies:
 
-Policy 1: Dialogflow CX Agent logging policy is to enable agent logs
-Policy 2. Dialogflow's webhooks cannot include static credentials (username/password)
+### Policy 1: Dialogflow CX Agent logging policy is to enable agent logs.
 
-Overall enforcer flow:
+### Policy 2. Dialogflow's webhooks cannot include static credentials (username/password)
 
-Dialogflow audit logs -> Cloud router sink -> Pub/Sub -> Cloud Functions -> Apply policies
 
-Configuration steps:
+##Overall enforcer flow:
+
+#### Dialogflow audit logs -> Cloud router sink -> Pub/Sub -> Cloud Functions -> Apply policies
+
+### Configuration steps:
 
 1. Enable Audit logs enabled for Dialoglow API.
+
 
 2. Create org-level Cloud log router/log-sink sending to pub/sub topic.
    * Logs included on filter:
@@ -26,6 +29,8 @@ Configuration steps:
 
    * Make sure to grant Publisher permissions to the logging service account.
 
-3. Create Cloud Function as a subscription of the Pub/sub topic. 
+
+4. Create Cloud Function as a subscription of the Pub/sub topic. 
+
 
 5. Implement Cloud function with main.py code
