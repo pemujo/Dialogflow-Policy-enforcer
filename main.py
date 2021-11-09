@@ -87,8 +87,11 @@ def get_client_option(region):
     :return: client_options object
     """
     # Regional options needed for CX
-    endpoint_region = '' if region == 'global' else region = region + '-'
-    client_options = ClientOptions(api_endpoint=endpoint_region + 'dialogflow.googleapis.com')
+    if region == 'global':
+        region = ''
+    else:
+        region = region + '-'
+    client_options = ClientOptions(api_endpoint=region + 'dialogflow.googleapis.com')
     return client_options
 
 
