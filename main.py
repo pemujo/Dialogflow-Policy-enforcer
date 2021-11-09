@@ -113,6 +113,7 @@ def delete_webhook_credentials(webhook_name, region):
     """ Returns a webhook object without credentials
     Args:
         webhook_name (str): Dialogflow Webhook
+        :param region:
     """
     # Regional options needed for CX
     client_options = get_client_option(region)
@@ -152,9 +153,12 @@ def webhook_cred_enforcer(agent_id, region):
          agent_id (str): Dialogflow agent id
 
     """
-    webhook_client = WebhooksClient()
+    # Regional options needed for CX
+    client_options = get_client_option(region)
+
+    webhook_client = WebhooksClient(client_options=client_options)
     webhooks = webhook_client.list_webhooks(parent=agent_id)
-    modified_webhooks = [delete_webhook_credentials(webhook.name) for webhook in webhooks]
+    modified_webhooks = [delete_webhook_credentials(webhook.name, region) for webhook in webhooks]
     return modified_webhooks
 
 
