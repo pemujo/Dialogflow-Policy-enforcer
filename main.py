@@ -20,17 +20,22 @@ def main_function(event, context):
     :param context: Metadata for the event (google.cloud.functions.Context) Not used with this script
     :return:
     """
+    try:
+        pubsub_message = base64.b64decode(event['data']).decode('utf-8')
+        pubsub_json = json.loads(pubsub_message)
 
-    pubsub_message = base64.b64decode(event['data']).decode('utf-8')
-    pubsub_json = json.loads(pubsub_message)
+        # Get event method and region
+        log_method = pubsub_json['resource']['labels']['method']
+        region = pubsub_json['protoPayload']['resourceLocation']['currentLocations'][0]
+        client_options = get_client_option(region)
 
-    # Get event method and region
-    log_method = pubsub_json['resource']['labels']['method']
-    region = pubsub_json['protoPayload']['resourceLocation']['currentLocations'][0]
-    client_options = get_client_option(region)
+        # Execute enforcing policies
+        execute_policy_enforcer(log_method, client_options, pubsub_json)
+        return "OK", 200
 
-    # Execute enforcing policies
-    execute_policy_enforcer(log_method, client_options, pubsub_json)
+    except Exception:
+        raise
+
 
 
 def execute_policy_enforcer(log_method, client_options, pubsub_json):
@@ -74,8 +79,7 @@ def execute_policy_enforcer(log_method, client_options, pubsub_json):
         return enforced_agents
 
     else:
-        print(log_method)
-        print('No logs matched. Nothing changed')
+        print('Nothing changed with log method received: ' + log_method)
         return False
 
 
@@ -171,9 +175,9 @@ def list_agents(parent, client_options):
         :param parent: Dialogflow agent location Format: projects/<Project ID>/locations/<Location ID> (str)
         :param client_options: API client options
     """
-
     # Creates Dialogflow API Client
     agents_client = AgentsClient(client_options=client_options)
 
+    # Gets  lists of agents on the GCP project
     agents_list = agents_client.list_agents(parent=parent)
     return agents_list
