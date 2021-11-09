@@ -17,7 +17,7 @@ def main_function(event, context):
     Triggered from a message on a Cloud Pub/Sub topic.
     Captures method, region from event['data']['resource']['labels']['method']
     :param event:  Event payload (dict)
-    :param context: Metadata for the event (google.cloud.functions.Context)
+    :param context: Metadata for the event (google.cloud.functions.Context) Not used with this script
     :return:
     """
 
@@ -140,7 +140,6 @@ def delete_webhook_credentials(webhook_name, client_options):
 
     # Update the fields to remove username and password.
     # TODO  It can include other html headers too
-
     update_mask = field_mask_pb2.FieldMask(paths=["generic_web_service.username", "generic_web_service.password"])
     webhook_object.generic_web_service.username = ''
     webhook_object.generic_web_service.password = ''
