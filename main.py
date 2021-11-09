@@ -22,22 +22,24 @@ def identify_log_message(event, context):
     pubsub_message = base64.b64decode(event['data']).decode('utf-8')
     pubsub_json = json.loads(pubsub_message)
     log_method = pubsub_json['resource']['labels']['method']
+    region = pubsub_json['protoPayload']['resourceLocation']['currentLocations'][0]
 
     # Remove webhook credentials after an update
     if log_method == "google.cloud.dialogflow.v3alpha1.Webhooks.UpdateWebhook":
         webhook_name = pubsub_json['protoPayload']['resourceName']
         delete_webhook_credentials(webhook_name)
         print('Deleted static credentials on Webhook: ' + str(webhook_name) + 'inform end user')
+
+
     # Remove webhook credentials after a Webhook is created
     elif log_method == "google.cloud.dialogflow.v3alpha1.Webhooks.CreateWebhook":
         agent_id = pubsub_json['protoPayload']['resourceName']
-        enforced_webhooks = webhook_cred_enforcer(agent_id)
+        enforced_webhooks = webhook_cred_enforcer(agent_id, region)
         for webhook in enforced_webhooks:
             print('Deleted static credentials on Webhook: ' + str(webhook.name))
 
     # Set correct log policy after agent is created
     elif log_method == "google.cloud.dialogflow.v3alpha1.Agents.CreateAgent":
-        region = pubsub_json['protoPayload']['resourceLocation']['currentLocations'][0]
         parent = pubsub_json['protoPayload']['request']['parent']
         agents = list_agents(parent, region)
         enforced_agents = [enforce_agent_logging(agent.name, log_policy, region) for agent in agents]
@@ -48,10 +50,8 @@ def identify_log_message(event, context):
     # Set correct log policy after agent is updated
     elif log_method == "google.cloud.dialogflow.v3alpha1.Agents.UpdateAgent":
         agent_id = pubsub_json['protoPayload']['resourceName']
-        region = pubsub_json['protoPayload']['resourceLocation']['currentLocations'][0]
         enforced_agent = enforce_agent_logging(agent_id, log_policy, region)
         print('Updated Dialogflow log policy to ' + str(log_policy) + ' on Dialogflow agent: ' + enforced_agent.name)
-
 
     else:
         print(log_method)
@@ -109,14 +109,16 @@ def enforce_agent_logging(name, policy, region):
     return response
 
 
-def delete_webhook_credentials(webhook_name):
+def delete_webhook_credentials(webhook_name, region):
     """ Returns a webhook object without credentials
     Args:
         webhook_name (str): Dialogflow Webhook
     """
+    # Regional options needed for CX
+    client_options = get_client_option(region)
 
     # Get Dialogflow Webhook API client
-    webhook_client = WebhooksClient()
+    webhook_client = WebhooksClient(client_options=client_options)
 
     # Get Webhook object
     webhook_object = webhook_client.get_webhook(name=webhook_name)
@@ -144,7 +146,7 @@ def log_policy_enforcer(agents_list):
     return enforced_logging_agents
 
 
-def webhook_cred_enforcer(agent_id):
+def webhook_cred_enforcer(agent_id, region):
     """ Removes static credentials from all webhooks of the agent_id
     Args:
          agent_id (str): Dialogflow agent id
