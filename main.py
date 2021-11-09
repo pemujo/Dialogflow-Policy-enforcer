@@ -23,19 +23,19 @@ def identify_log_message(event, context):
     pubsub_json = json.loads(pubsub_message)
     log_method = pubsub_json['resource']['labels']['method']
 
-    # Execute Webhook function to remove credentials
+    # Remove webhook credentials after an update
     if log_method == "google.cloud.dialogflow.v3alpha1.Webhooks.UpdateWebhook":
         webhook_name = pubsub_json['protoPayload']['resourceName']
         delete_webhook_credentials(webhook_name)
         print('Deleted static credentials on Webhook: ' + str(webhook_name) + 'inform end user')
-
+    # Remove webhook credentials after a Webhook is created
     elif log_method == "google.cloud.dialogflow.v3alpha1.Webhooks.CreateWebhook":
         agent_id = pubsub_json['protoPayload']['resourceName']
         enforced_webhooks = webhook_cred_enforcer(agent_id)
         for webhook in enforced_webhooks:
             print('Deleted static credentials on Webhook: ' + str(webhook.name))
 
-    # Execute Agent logging function to set correct log policy
+    # Set correct log policy after agent is created
     elif log_method == "google.cloud.dialogflow.v3alpha1.Agents.CreateAgent":
         region = pubsub_json['protoPayload']['resourceLocation']['currentLocations'][0]
         parent = pubsub_json['protoPayload']['request']['parent']
@@ -45,6 +45,7 @@ def identify_log_message(event, context):
         for agent in enforced_agents:
             print('Agent: ' + agent.name)
 
+    # Set correct log policy after agent is updated
     elif log_method == "google.cloud.dialogflow.v3alpha1.Agents.UpdateAgent":
         agent_id = pubsub_json['protoPayload']['resourceName']
         region = pubsub_json['protoPayload']['resourceLocation']['currentLocations'][0]
