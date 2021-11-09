@@ -43,7 +43,7 @@ def identify_log_message(event, context):
             print('Deleted static credentials on Webhook: ' + str(webhook.name))
 
     # Set correct log policy after agent is created
-    elif log_method == "google.cloud.dialogflow.v3alpha1.Agents.CreateAgent":
+    elif "Agents.CreateAgent" in log_method:
         parent = pubsub_json['protoPayload']['request']['parent']
         agents = list_agents(parent, client_options)
         enforced_agents = [enforce_agent_logging(agent.name, log_policy, client_options) for agent in agents]
@@ -52,7 +52,7 @@ def identify_log_message(event, context):
             print('Agent: ' + agent.name)
 
     # Set correct log policy after agent is updated
-    elif log_method == "google.cloud.dialogflow.v3alpha1.Agents.UpdateAgent":
+    elif "Agents.UpdateAgent" in log_method:
         agent_id = pubsub_json['protoPayload']['resourceName']
         enforced_agent = enforce_agent_logging(agent_id, log_policy, client_options)
         print('Updated Dialogflow log policy to ' + str(log_policy) + ' on Dialogflow agent: ' + enforced_agent.name)
