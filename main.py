@@ -27,7 +27,7 @@ def identify_log_message(event, context):
     # Remove webhook credentials after an update
     if log_method == "google.cloud.dialogflow.v3alpha1.Webhooks.UpdateWebhook":
         webhook_name = pubsub_json['protoPayload']['resourceName']
-        delete_webhook_credentials(webhook_name)
+        delete_webhook_credentials(webhook_name, region)
         print('Deleted static credentials on Webhook: ' + str(webhook_name) + 'inform end user')
 
 
