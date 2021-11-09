@@ -31,11 +31,9 @@ def identify_log_message(event, context):
     if "Webhooks.UpdateWebhook" in log_method:
         webhook_name = pubsub_json['protoPayload']['resourceName']
         delete_webhook_credentials(webhook_name, client_options)
-        # print('Deleted static credentials on Webhook: ' + str(webhook_name) + 'inform end user')
-        return 'Deleted static credentials on Webhook: ' + str(webhook_name) + 'inform end user'
+        print('Deleted static credentials on Webhook: ' + str(webhook_name) + 'inform end user')
 
-
-    # Remove webhook credentials after a Webhook is created
+    # Remove webhook credentials after a new Webhook is created
     elif "Webhooks.CreateWebhook" in log_method:
         agent_id = pubsub_json['protoPayload']['resourceName']
         enforced_webhooks = webhook_cred_enforcer(agent_id, client_options)
@@ -47,9 +45,8 @@ def identify_log_message(event, context):
         parent = pubsub_json['protoPayload']['request']['parent']
         agents = list_agents(parent, client_options)
         enforced_agents = [enforce_agent_logging(agent.name, log_policy, client_options) for agent in agents]
-        print('Updated Dialogflow log policy to ' + str(log_policy) + ' on Dialogflow agents:')
         for agent in enforced_agents:
-            print('Agent: ' + agent.name)
+            print('Updated Dialogflow log policy ' + str(log_policy) + ' on Dialogflow Agent: ' + agent.name)
 
     # Set correct log policy after agent is updated
     elif "Agents.UpdateAgent" in log_method:
@@ -123,7 +120,9 @@ def delete_webhook_credentials(webhook_name, client_options):
     # Get Webhook object
     webhook_object = webhook_client.get_webhook(name=webhook_name)
 
-    # Update the fields to remove username and password
+    # Update the fields to remove username and password.
+    # TODO  It can include other html headers too
+
     update_mask = field_mask_pb2.FieldMask(paths=["generic_web_service.username", "generic_web_service.password"])
     webhook_object.generic_web_service.username = ''
     webhook_object.generic_web_service.password = ''
@@ -134,22 +133,11 @@ def delete_webhook_credentials(webhook_name, client_options):
     return response
 
 
-def log_policy_check(agents_list):
-    incorrect_log_agents = [agent for agent in agents_list if
-                            agent.advanced_settings.logging_settings.enable_stackdriver_logging != log_policy]
-    return incorrect_log_agents
-
-
-def log_policy_enforcer(agents_list):
-    failed_policy_agents = log_policy_check(agents_list)
-    enforced_logging_agents = [enforce_agent_logging(agent.name, log_policy) for agent in failed_policy_agents]
-    return enforced_logging_agents
-
-
 def webhook_cred_enforcer(agent_id, client_options):
     """ Removes static credentials from all webhooks of the agent_id
     Args:
          agent_id (str): Dialogflow agent id
+         :param client_options:
 
     """
 
