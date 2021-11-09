@@ -28,14 +28,15 @@ def identify_log_message(event, context):
     client_options = get_client_option(region)
 
     # Remove webhook credentials after an update
-    if log_method == "google.cloud.dialogflow.v3alpha1.Webhooks.UpdateWebhook":
+    if "Webhooks.UpdateWebhook" in log_method:
         webhook_name = pubsub_json['protoPayload']['resourceName']
         delete_webhook_credentials(webhook_name, client_options)
-        print('Deleted static credentials on Webhook: ' + str(webhook_name) + 'inform end user')
+        # print('Deleted static credentials on Webhook: ' + str(webhook_name) + 'inform end user')
+        return 'Deleted static credentials on Webhook: ' + str(webhook_name) + 'inform end user'
 
 
     # Remove webhook credentials after a Webhook is created
-    elif log_method == "google.cloud.dialogflow.v3alpha1.Webhooks.CreateWebhook":
+    elif "Webhooks.CreateWebhook" in log_method:
         agent_id = pubsub_json['protoPayload']['resourceName']
         enforced_webhooks = webhook_cred_enforcer(agent_id, client_options)
         for webhook in enforced_webhooks:
