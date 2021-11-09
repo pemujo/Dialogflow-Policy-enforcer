@@ -20,10 +20,9 @@ log_policy = True
 def main_function(event, context):
     """
     Triggered from a message on a Cloud Pub/Sub topic.
-    Captures method, region from event['data']['resource']['labels']['method']
-    :param event:  Event payload (dict)
+    Captures method and region from event['data']
+    :param event:  Event payload
     :param context: Metadata for the event (google.cloud.functions.Context) Not used with this script
-    :return:
     """
     try:
         pubsub_message = base64.b64decode(event["data"]).decode("utf-8")
@@ -150,10 +149,11 @@ def enforce_agent_logging(name, policy, client_options):
 
 
 def delete_webhook_credentials(webhook_name, client_options):
-    """Returns a webhook object without credentials
-    Args:
-        :param client_options: API client options
-        :param webhook_name: Dialogflow Webhook name (str)
+    """
+    Returns a webhook object after removing credentials
+    :param webhook_name: Dialogflow Webhook name (str)
+    :param client_options: API client options
+    :return: webhook object
     """
 
     # Get Dialogflow Webhook API client
@@ -177,12 +177,13 @@ def delete_webhook_credentials(webhook_name, client_options):
 
 
 def webhook_cred_enforcer(agent_id, client_options):
-    """Removes static credentials from all webhooks of the agent_id
-    Args:
-         :param agent_id: Dialogflow agent id (str):
-         :param client_options: API client options
-
     """
+    Removes static credentials from all webhooks of the agent_id
+    :param agent_id: Dialogflow agent id (str)
+    :param client_options: API client options
+    :return: List of webhooks
+    """
+
     webhook_client = WebhooksClient(client_options=client_options)
     webhooks = webhook_client.list_webhooks(parent=agent_id)
     modified_webhooks = [
@@ -192,11 +193,13 @@ def webhook_cred_enforcer(agent_id, client_options):
 
 
 def list_agents(parent, client_options):
-    """Returns a ListAgentsPager object with the CX agents created on the project_id
-    Args:
-        :param parent: Dialogflow agent location Format: projects/<Project ID>/locations/<Location ID> (str)
-        :param client_options: API client options
     """
+    Returns a ListAgentsPager object with the CX agents created on the project_id
+    :param parent: Dialogflow agent location Format: projects/<Project ID>/locations/<Location ID> (str)
+    :param client_options: API client options
+    :return: List of Dialoglow agents
+    """
+
     # Creates Dialogflow API Client
     agents_client = AgentsClient(client_options=client_options)
 
