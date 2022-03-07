@@ -31,11 +31,13 @@
        Fulfillments.UpdateFulfillment
        )
 
-    Or  
-    
-    * Run `create_sink.sh` 
+   * And make sure to grant Publisher permissions to the logging service account.
 
-    * And make sure to grant Publisher permissions to the logging service account.
+   Or  
+    
+   * Run `create_sink.sh` 
+
+    
 
  
 
