@@ -35,7 +35,7 @@
     
     * Run `create_sink.sh` 
 
-    And  Make sure to grant Publisher permissions to the logging service account.
+    * And make sure to grant Publisher permissions to the logging service account.
 
  
 
