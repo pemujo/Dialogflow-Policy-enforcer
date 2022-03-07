@@ -31,13 +31,13 @@
        Fulfillments.UpdateFulfillment
        )
 
-  Or
+    Or  
+    
+    * Run `create_sink.sh` 
 
-  * Make sure to grant Publisher permissions to the logging service account.
+    And  Make sure to grant Publisher permissions to the logging service account.
 
-  Or
-
-  * Run `create_sink.sh`
+ 
 
 4. Create Cloud Function as a subscription of the Pub/sub topic and implement Cloud function with main.py code
 
