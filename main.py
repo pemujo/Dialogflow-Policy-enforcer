@@ -12,7 +12,8 @@ from google.cloud.dialogflowcx_v3.types import UpdateWebhookRequest
 from google.cloud.dialogflowcx_v3.types import AdvancedSettings
 from google.api_core.client_options import ClientOptions
 from google.protobuf import field_mask_pb2
-
+from google.cloud.dialogflow_v2.services.fulfillments import FulfillmentsClient
+from google.cloud.dialogflow_v2.types.fulfillment import UpdateFulfillmentRequest
 # Placeholder for Dialogflow logging policy requirement.
 log_policy = True
 
@@ -93,7 +94,9 @@ def execute_policy_enforcer(log_method, client_options, pubsub_json):
                 + agent.name
             )
         return enforced_agents
-
+    elif "Fulfillments.UpdateFulfillment":
+        fullfillment_name = pubsub_json["protoPayload"]["resourceName"]
+        remove_fullfillment(client_options, fullfillment_name)
     else:
         print("Nothing changed with log method received: " + log_method)
         return False
@@ -206,3 +209,15 @@ def list_agents(parent, client_options):
     # Gets  lists of agents on the GCP project
     agents_list = agents_client.list_agents(parent=parent)
     return agents_list
+
+def remove_fullfillment(client_options, name):
+    fullfillment_client = FulfillmentsClient(client_options=client_options)
+    request = UpdateFulfillmentRequest()
+    request.fulfillment.generic_web_service.username = ''
+    request.fulfillment.generic_web_service.password = ''
+    request.fulfillment.name = name
+    request.update_mask = field_mask_pb2.FieldMask(
+        paths=["generic_web_service.username", "generic_web_service.password"]
+    )
+    response = fullfillment_client.update_fulfillment(request)
+    return response
