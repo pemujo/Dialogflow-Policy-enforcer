@@ -14,6 +14,10 @@ from google.api_core.client_options import ClientOptions
 from google.protobuf import field_mask_pb2
 from google.cloud.dialogflow_v2.services.fulfillments import FulfillmentsClient
 from google.cloud.dialogflow_v2.types.fulfillment import UpdateFulfillmentRequest
+from google.cloud.dialogflow_v2.services.agents import AgentsClient as AgentsClientES
+from google.cloud.dialogflow_v2.types.agent import SetAgentRequest
+from google.cloud.dialogflow_v2beta1.services.conversation_profiles import ConversationProfilesClient
+from google.cloud.dialogflow_v2beta1.types.conversation_profile import UpdateConversationProfileRequest
 # Placeholder for Dialogflow logging policy requirement.
 log_policy = True
 
@@ -65,7 +69,12 @@ def execute_policy_enforcer(log_method, client_options, pubsub_json):
         for webhook in enforced_webhooks:
             print("Deleted static credentials on Webhook: " + str(webhook.name))
         return enforced_webhooks
-
+    # Dialogflow ES Set correct log policy after agent is updated
+    elif "Agents.UpdateAgentSettings" in log_method:
+        agent_name = pubsub_json["protoPayload"]["resourceName"]
+        agent_parts = agent_name.split('/')
+        parent_name = f"{agent_parts[0]}/{agent_parts[1]}"
+        enforce_agent_logging_es(parent_name, agent_name, log_policy, client_options)
     # Set correct log policy after agent is updated
     elif "Agents.UpdateAgent" in log_method:
         agent_id = pubsub_json["protoPayload"]["resourceName"]
@@ -94,9 +103,11 @@ def execute_policy_enforcer(log_method, client_options, pubsub_json):
                 + agent.name
             )
         return enforced_agents
+    # Dialogflow ES: Delete fulfillment static credentials
     elif "Fulfillments.UpdateFulfillment":
         fullfillment_name = pubsub_json["protoPayload"]["resourceName"]
         remove_fullfillment(client_options, fullfillment_name)
+        print("Deleted static credentials on fullfillment: " + fullfillment_name)
     else:
         print("Nothing changed with log method received: " + log_method)
         return False
@@ -150,6 +161,24 @@ def enforce_agent_logging(name, policy, client_options):
     response = agents_client.update_agent(request=request)
     return response
 
+def enforce_agent_logging_es(parent_name, agent_name, policy, client_options):
+    """
+    """
+    agents_client = AgentsClientES(client_options=client_options)
+    request = SetAgentRequest()
+    request.agent.enable_logging = policy
+    # Enable stackdriver logging is not allowed by public API
+    request.agent.parent = parent_name
+    request.update_mask = field_mask_pb2.FieldMask(
+        paths=["enable_logging", ]
+    )
+    print(
+        "Updated Dialogflow log policy "
+        + str(log_policy)
+        + " on Project: "
+        + parent_name
+    )
+    agents_client.set_agent(request)
 
 def delete_webhook_credentials(webhook_name, client_options):
     """
